@@ -47,11 +47,11 @@ func (t *Tasks) DeleteTask(ctx context.Context, email, taskId string) error {
 	return nil
 }
 
-func (t *Tasks) GetTasks(ctx context.Context, email string) ([]models.Task, error) {
+func (t *Tasks) GetTasks(ctx context.Context, email string) (*[]models.Task, error) {
 	ctx, span := metrics.FollowSpan(ctx)
 	defer span.End()
 	
-	return t.GetTasks(ctx, email)
+	return t.taskStorage.GetTasks(ctx, email)
 }
 
 func (t *Tasks) GetTaskDescription(ctx context.Context, email, taskId string) (string, error) {

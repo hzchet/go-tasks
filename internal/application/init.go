@@ -4,6 +4,9 @@ import (
 	"gitlab.com/golang-hse-2022/team1/tasks/pkg/infra/logger"
 	"gitlab.com/golang-hse-2022/team1/tasks/pkg/infra/metrics"
 	"gitlab.com/golang-hse-2022/team1/tasks/pkg/infra/probes"
+	"gitlab.com/golang-hse-2022/team1/tasks/internal/adapters/memory"
+	"gitlab.com/golang-hse-2022/team1/tasks/internal/adapters/http"
+	"gitlab.com/golang-hse-2022/team1/tasks/internal/domain/usecases"
 	"context"
 )
 
@@ -30,7 +33,26 @@ func (app *App) Start() error {
 	if err != nil {
 		app.l.Sugar().Fatalf("Metrics init failed: %s", err.Error())
 	}
+
+	userStorage, err := memory.New()
+	if err != nil {
+		app.l.Sugar().Fatalf("create user storage failed: %s", err.Error())
+	}
+
+	tasks, err := usecases.New(userStorage)
+	if err != nil {
+		app.l.Sugar().Fatalf("create buissness logic failed: %s", err.Error())
+	}
+
+	s, err := http.New(tasks, app.l)
+	if err != nil {
+		app.l.Sugar().Fatalf("server not started %s", err.Error())
+	}
 	app.shutdownFuncs = append(app.shutdownFuncs, me.Stop)
+	err = s.Start()
+	if err != nil {
+		app.l.Sugar().Fatalf("server not started: %s", err.Error())
+	}
 
 	probes.SetReady()
 

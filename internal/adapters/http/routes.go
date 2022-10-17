@@ -16,4 +16,10 @@ func initRouter(a *Adapter, r *gin.Engine, l logger.Logger) {
 	})
 	r.Use(ginzap.Ginzap(l, time.RFC3339, true))
 	r.Use(ginzap.RecoveryWithZap(l, true))
+
+	v1 := r.Group("/tasks/api/v1/tasks/")
+	{
+		v1.POST("/approve", a.approve)
+		v1.POST("/decline", a.decline)
+	}
 }

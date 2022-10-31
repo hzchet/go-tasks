@@ -8,4 +8,5 @@ formate:
 
 .PHONY: swagger
 swagger:
-	echo "swag gen"
+	swag init -g ./internal/adapters/http/api.go
+	swagger generate cli -f docs/swagger.json -A tasks_app

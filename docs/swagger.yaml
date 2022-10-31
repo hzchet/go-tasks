@@ -1,0 +1,159 @@
+basePath: /tasks/api/v1
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: Signed token protects our admin endpoints
+  title: Example for lecture
+  version: 1.0.0
+paths:
+  /:
+    get:
+      description: get tasks created by the user
+      operationId: GetTasks
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: bad request
+          schema:
+            type: string
+        "403":
+          description: forbidden
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: get all the tasks
+      tags:
+      - handler
+    post:
+      description: create task by the given taskRequest and return taskId
+      operationId: Create
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: bad request
+          schema:
+            type: string
+        "403":
+          description: forbidden
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: create task
+      tags:
+      - handler
+  /:taskId:
+    delete:
+      description: Delete task by taskId in case it has been assigned to the user
+      operationId: Delete
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: bad request
+          schema:
+            type: string
+        "403":
+          description: forbidden
+          schema:
+            type: string
+        "404":
+          description: not found
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: Delete task by taskId
+      tags:
+      - handler
+    get:
+      description: get task description by the taskId
+      operationId: GetDescription
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: bad request
+          schema:
+            type: string
+        "403":
+          description: forbidden
+          schema:
+            type: string
+        "404":
+          description: not found
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: get task description by the taskId
+      tags:
+      - handler
+  /approve/:taskId:
+    post:
+      description: Approve task by taskId in case it has been assigned to the user
+      operationId: Approve
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: bad request
+          schema:
+            type: string
+        "403":
+          description: forbidden
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: Approve task by taskId
+      tags:
+      - handler
+  /decline/:taskId:
+    post:
+      description: Decline task by taskId in case it has been assigned to the user
+      operationId: Decline
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: bad request
+          schema:
+            type: string
+        "403":
+          description: forbidden
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: Decline task by taskId
+      tags:
+      - handler
+schemes:
+- http
+securityDefinitions:
+  Auth:
+    type: basic
+swagger: "2.0"

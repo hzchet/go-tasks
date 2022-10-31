@@ -22,17 +22,19 @@ func New(taskStorage ports.TaskStorage) (*Tasks, error) {
 	}, nil
 }
 
-func (t *Tasks) CreateTask(ctx context.Context, email string, taskRequest models.TaskRequest) error {
+func (t *Tasks) CreateTask(ctx context.Context, email string, taskRequest models.TaskRequest) (string, error) {
 	ctx, span := metrics.FollowSpan(ctx)
 	defer span.End()
 
+	taskId := uuid.NewV1().String()
 	task := models.Task{
 		AuthorEmail: email,
 		Body: taskRequest,
 		IsCancelled: false,
-		Id: uuid.NewV1().String(),
+		Id: taskId,
 	}
-	return t.taskStorage.AddTask(ctx, email, task)
+	
+	return taskId, t.taskStorage.AddTask(ctx, email, task)
 }
 
 func (t *Tasks) DeleteTask(ctx context.Context, email, taskId string) error {
@@ -65,7 +67,7 @@ func (t *Tasks) GetTaskDescription(ctx context.Context, email, taskId string) (s
 	return task.Body.Description, nil
 }
 
-func (t *Tasks) ApproveTask(ctx context.Context,email, taskId string) error {
+func (t *Tasks) ApproveTask(ctx context.Context, email, taskId string) error {
 	ctx, span := metrics.FollowSpan(ctx)
 	defer span.End()
 	

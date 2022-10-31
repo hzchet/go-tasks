@@ -3,8 +3,10 @@ package http
 import (
 	"gitlab.com/golang-hse-2022/team1/tasks/internal/ports"
 	"gitlab.com/golang-hse-2022/team1/tasks/pkg/infra/logger"
+	
 	"context"
 	"errors"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -78,4 +80,41 @@ func (a *Adapter) Stop(ctx context.Context) error {
 		err = a.s.Shutdown(ctx)
 	})
 	return err
+}
+
+type UserProjection struct {
+	Login string
+	Email string	
+}
+
+func (a *Adapter) AuthRequired() gin.HandlerFunc {
+	client := &http.Client{Timeout: 10 * time.Second}
+
+	return func(ctx *gin.Context) {
+		endpoint := "http://localhost:3030/auth/api/v1/verify"
+		
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, nil)
+		if err != nil {
+			a.BindError(ctx, err)
+			return
+		}
+
+		response, err := client.Do(req)
+		if err != nil {
+			a.BindError(ctx, err)
+		}
+		defer response.Body.Close()
+		
+		if response.StatusCode != http.StatusOK {
+			ctx.JSON(response.StatusCode, gin.H{
+				"error": response.Status,
+			})
+		}
+
+		user := UserProjection{}
+		json.NewDecoder(response.Body).Decode(&user)
+
+		ctx.Set("email", user.Email)
+		ctx.Next()
+	}
 }

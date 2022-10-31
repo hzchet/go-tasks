@@ -17,9 +17,14 @@ func initRouter(a *Adapter, r *gin.Engine, l logger.Logger) {
 	r.Use(ginzap.Ginzap(l, time.RFC3339, true))
 	r.Use(ginzap.RecoveryWithZap(l, true))
 
-	v1 := r.Group("/tasks/api/v1/tasks/")
+	authorized := r.Group("/tasks/api/v1/tasks/")
+	authorized.Use(a.AuthRequired())
 	{
-		v1.POST("/approve", a.approve)
-		v1.POST("/decline", a.decline)
+		authorized.GET("/", a.getTasks)
+		authorized.GET("/:taskId", a.getDescription)
+		authorized.POST("/approve/:taskId", a.approve)
+		authorized.POST("/decline/:taskId", a.decline)
+		authorized.POST("/", a.create)
+		authorized.DELETE("/:taskId", a.delete)
 	}
 }

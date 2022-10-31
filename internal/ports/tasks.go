@@ -7,7 +7,7 @@ import (
 )
 
 type Tasks interface{
-	CreateTask(ctx context.Context, email string, taskRequest models.TaskRequest) error
+	CreateTask(ctx context.Context, email string, taskRequest models.TaskRequest) (string, error)
 	DeleteTask(ctx context.Context, email, taskId string) error
 	GetTasks(ctx context.Context, email string) (*[]models.Task, error)
 	GetTaskDescription(ctx context.Context, email, taskId string) (string, error)

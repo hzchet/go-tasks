@@ -31,11 +31,17 @@ func (t *Tasks) CreateTask(ctx context.Context, email string, taskRequest models
 		AuthorEmail: email,
 		Body: taskRequest,
 		IsCancelled: false,
+		Status: "in consideration",
 		Id: taskId,
 	}
+	
+	err := t.taskStorage.AddTask(ctx, email, task)
 
-	log.Printf("send mail to %s: approve/decline new task %s\n", task.Body.Approvers[0].Email, taskId)
-	return taskId, t.taskStorage.AddTask(ctx, email, task)
+	if len(task.Body.Approvers) > 0 {
+		log.Printf("send mail to %s: approve/decline new task %s\n", task.Body.Approvers[0].Email, taskId)
+	}
+
+	return taskId, err
 }
 
 func (t *Tasks) DeleteTask(ctx context.Context, email, taskId string) error {
@@ -83,6 +89,9 @@ func (t *Tasks) ApproveTask(ctx context.Context, email, taskId string) error {
 	if err != nil {
 		return err
 	}
+	if task.Status == "declined" {
+		return fmt.Errorf("task already declined: %w", models.ErrForbidden)
+	}
 	var approverIndex int = -1
 	for i := range(task.Body.Approvers) {
 		if task.Body.Approvers[i].Email == email {
@@ -93,7 +102,9 @@ func (t *Tasks) ApproveTask(ctx context.Context, email, taskId string) error {
 	}
 	if approverIndex != -1 && approverIndex + 1 < len(task.Body.Approvers) {
 		log.Printf("send mail to %s: approve/decline new task %s\n", task.Body.Approvers[approverIndex + 1].Email, taskId)
+		return nil
 	} else if approverIndex == len(task.Body.Approvers) - 1 {
+		task.Status = "approved"
 		return sendResult(ctx, "approved", taskId, task.Body.Approvers)
 	}
 	return fmt.Errorf("approver not found: %w", models.ErrNotFound)
@@ -107,9 +118,13 @@ func (t *Tasks) DeclineTask(ctx context.Context, email, taskId string) error {
 	if err != nil {
 		return err
 	}
+	if task.Status == "approved" {
+		return fmt.Errorf("task already approved: %w", models.ErrForbidden)
+	}
 	for i := range(task.Body.Approvers) {
 		if task.Body.Approvers[i].Email == email {
 			task.Body.Approvers[i].Status = "declined"
+			task.Status = "declined"
 			return sendResult(ctx, "declined", taskId, task.Body.Approvers)
 		}
 	}

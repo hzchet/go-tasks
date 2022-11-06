@@ -20,6 +20,7 @@ func (s *MemoryStorage) AddTask(ctx context.Context, email string, task models.T
 		tasks = s.tasksByAuthor[email]
 	}
 	*tasks = append(*tasks, task)
+	s.tasksById[task.Id] = &task
 	return nil
 }
 
@@ -37,7 +38,7 @@ func (s *MemoryStorage) GetTasks(ctx context.Context, email string) (*[]models.T
 	return tasks, nil
 }
 
-func (s *MemoryStorage) GetTaskById(ctx context.Context, taskId string) (models.Task, error) {
+func (s *MemoryStorage) GetTaskById(ctx context.Context, taskId string) (*models.Task, error) {
 	ctx, span := metrics.FollowSpan(ctx)
 	defer span.End()
 
@@ -46,7 +47,7 @@ func (s *MemoryStorage) GetTaskById(ctx context.Context, taskId string) (models.
 		zapctx.Error(ctx, "task not found", zap.String("task", taskId))
 		err := fmt.Errorf("%w: task", models.ErrNotFound)
 		metrics.SetError(span, err)
-		return models.Task{}, err
+		return &models.Task{}, err
 	}
 	return task, nil
 }

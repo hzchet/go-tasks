@@ -33,7 +33,8 @@ func (t *Tasks) CreateTask(ctx context.Context, email string, taskRequest models
 		IsCancelled: false,
 		Id: taskId,
 	}
-	
+
+	log.Printf("send mail to %s: approve/decline new task %s\n", task.Body.Approvers[0].Email, taskId)
 	return taskId, t.taskStorage.AddTask(ctx, email, task)
 }
 
@@ -67,6 +68,13 @@ func (t *Tasks) GetTaskDescription(ctx context.Context, email, taskId string) (s
 	return task.Body.Description, nil
 }
 
+func sendResult(ctx context.Context, result string, taskId string, approvers []*models.Approver) error {
+	for i := range(approvers) {
+		log.Printf("send mail to %s: task %s, status: %s\n", approvers[i].Email, taskId, result)
+	}
+	return nil
+}
+
 func (t *Tasks) ApproveTask(ctx context.Context, email, taskId string) error {
 	ctx, span := metrics.FollowSpan(ctx)
 	defer span.End()
@@ -75,30 +83,18 @@ func (t *Tasks) ApproveTask(ctx context.Context, email, taskId string) error {
 	if err != nil {
 		return err
 	}
-	isApproved := false
-	approvedCounter := 0
+	var approverIndex int = -1
 	for i := range(task.Body.Approvers) {
 		if task.Body.Approvers[i].Email == email {
 			task.Body.Approvers[i].Status = "approved"
-			isApproved = true
-		}
-		if task.Body.Approvers[i].Status == "approved" {
-			approvedCounter += 1
-		}
-		if isApproved {
-			log.Printf("send mail to %s: task %s approved\n", task.Body.Approvers[i].Email, taskId)
+			approverIndex = i
+			break
 		}
 	}
-	if isApproved {
-		if approvedCounter == len(task.Body.Approvers) {
-			for i := range(task.Body.Approvers) {
-				log.Printf("send mail to %s: task %s approved\n", task.Body.Approvers[i].Email, taskId)
-				if task.Body.Approvers[i].Email == email {
-					break
-				}
-			}
-		}
-		return nil
+	if approverIndex != -1 && approverIndex + 1 < len(task.Body.Approvers) {
+		log.Printf("send mail to %s: approve/decline new task %s\n", task.Body.Approvers[approverIndex + 1].Email, taskId)
+	} else if approverIndex == len(task.Body.Approvers) - 1 {
+		return sendResult(ctx, "approved", taskId, task.Body.Approvers)
 	}
 	return fmt.Errorf("approver not found: %w", models.ErrNotFound)
 }
@@ -111,18 +107,11 @@ func (t *Tasks) DeclineTask(ctx context.Context, email, taskId string) error {
 	if err != nil {
 		return err
 	}
-	isDeclined := false
 	for i := range(task.Body.Approvers) {
 		if task.Body.Approvers[i].Email == email {
 			task.Body.Approvers[i].Status = "declined"
-			isDeclined = true
+			return sendResult(ctx, "declined", taskId, task.Body.Approvers)
 		}
-	}
-	if isDeclined {
-		for i := range(task.Body.Approvers) {
-			log.Printf("send mail to %s: task %s declined\n", task.Body.Approvers[i].Email, taskId)
-		}
-		return nil
 	}
 	return fmt.Errorf("approver not found: %w", models.ErrNotFound)
 }

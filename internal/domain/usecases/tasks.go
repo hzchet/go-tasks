@@ -42,7 +42,7 @@ func (t *Tasks) DeleteTask(ctx context.Context, email, taskId string) error {
 	ctx, span := metrics.FollowSpan(ctx)
 	defer span.End()
 	
-	task, err := t.taskStorage.GetTaskById(ctx, email, taskId)
+	task, err := t.taskStorage.GetTaskById(ctx, taskId)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (t *Tasks) GetTaskDescription(ctx context.Context, email, taskId string) (s
 	ctx, span := metrics.FollowSpan(ctx)
 	defer span.End()
 	
-	task, err := t.taskStorage.GetTaskById(ctx, email, taskId)
+	task, err := t.taskStorage.GetTaskById(ctx, taskId)
 	if err != nil {
 		return "", err
 	}
@@ -79,7 +79,7 @@ func (t *Tasks) ApproveTask(ctx context.Context, email, taskId string) error {
 	ctx, span := metrics.FollowSpan(ctx)
 	defer span.End()
 	
-	task, err := t.taskStorage.GetTaskById(ctx, email, taskId)
+	task, err := t.taskStorage.GetTaskById(ctx, taskId)
 	if err != nil {
 		return err
 	}
@@ -103,7 +103,7 @@ func (t *Tasks) DeclineTask(ctx context.Context, email, taskId string) error {
 	ctx, span := metrics.FollowSpan(ctx)
 	defer span.End()
 	
-	task, err := t.taskStorage.GetTaskById(ctx, email, taskId)
+	task, err := t.taskStorage.GetTaskById(ctx, taskId)
 	if err != nil {
 		return err
 	}

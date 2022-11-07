@@ -213,5 +213,3 @@ func (s *integraTestSuite) TestDeleteTask() {
 	s.Greater(len(proj.Tasks), 0)
 	s.Equal(true, proj.Tasks[len(proj.Tasks) - 1].IsCancelled)
 }
-
-

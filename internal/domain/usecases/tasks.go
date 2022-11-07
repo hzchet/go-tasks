@@ -71,6 +71,7 @@ func (t *Tasks) GetTaskDescription(ctx context.Context, email, taskId string) (s
 	if err != nil {
 		return "", err
 	}
+
 	return task.Body.Description, nil
 }
 

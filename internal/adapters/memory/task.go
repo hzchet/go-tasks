@@ -16,10 +16,10 @@ func (s *MemoryStorage) AddTask(ctx context.Context, email string, task models.T
 	
 	tasks, ok := s.tasksByAuthor[email]
 	if !ok {
-		s.tasksByAuthor[email] = &[]models.Task{}
+		s.tasksByAuthor[email] = &[]*models.Task{}
 		tasks = s.tasksByAuthor[email]
 	}
-	*tasks = append(*tasks, task)
+	*tasks = append(*tasks, &task)
 	s.tasksById[task.Id] = &task
 	return nil
 }
@@ -35,7 +35,12 @@ func (s *MemoryStorage) GetTasks(ctx context.Context, email string) (*[]models.T
 		metrics.SetError(span, err)
 		return &[]models.Task{}, err
 	}
-	return tasks, nil
+	
+	result := []models.Task{}
+	for i := range(*tasks) {
+		result = append(result, *(*tasks)[i])
+	}
+	return &result, nil
 }
 
 func (s *MemoryStorage) GetTaskById(ctx context.Context, taskId string) (*models.Task, error) {

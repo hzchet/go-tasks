@@ -3,7 +3,7 @@ package http
 import (
 	"gitlab.com/golang-hse-2022/team1/tasks/internal/ports"
 	"gitlab.com/golang-hse-2022/team1/tasks/pkg/infra/logger"
-	
+
 	"context"
 	"errors"
 	"encoding/json"
@@ -21,13 +21,14 @@ type Adapter struct {
 	s    *http.Server
 	l    net.Listener
 	tasks ports.Tasks
+	isProd bool
 }
 
 type Config struct {
 	Port int `env:"HTTP_PORT" envDefault:"3000"`
 }
 
-func New(tasks ports.Tasks, log logger.Logger) (*Adapter, error) {
+func New(tasks ports.Tasks, log logger.Logger, isProd bool) (*Adapter, error) {
 	var cfg Config
 	if err := env.Parse(&cfg); err != nil {
 		return nil, fmt.Errorf("parse server http adapter configuration failed: %w", err)
@@ -49,6 +50,7 @@ func New(tasks ports.Tasks, log logger.Logger) (*Adapter, error) {
 		s:    &server,
 		l:    l,
 		tasks: tasks,
+		isProd: isProd,
 	}
 	initRouter(&a, router, log)
 
@@ -83,7 +85,6 @@ func (a *Adapter) Stop(ctx context.Context) error {
 }
 
 type UserProjection struct {
-	Login string
 	Email string	
 }
 
@@ -91,29 +92,53 @@ func (a *Adapter) AuthRequired() gin.HandlerFunc {
 	client := &http.Client{Timeout: 10 * time.Second}
 
 	return func(ctx *gin.Context) {
-		endpoint := "http://localhost:3030/auth/api/v1/verify"
+		if !a.isProd {
+			ctx.Set("email", "email1")
+			ctx.Next()
+			return
+		}
+		endpoint := "http://localhost:8080/auth/api/v1/verify"
 		
+		accessCookie, err := ctx.Request.Cookie("access_token")
+		if err != nil {
+			ctx.JSON(http.StatusForbidden, gin.H{
+				"error": "verification failed",
+			})
+			return
+		}
+
+		refreshCookie, err := ctx.Request.Cookie("refresh_token")
+		if err != nil {
+			ctx.JSON(http.StatusForbidden, gin.H{
+				"error": "verification failed",
+			})
+		}
+
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, nil)
 		if err != nil {
 			a.BindError(ctx, err)
 			return
 		}
+		
+		req.AddCookie(accessCookie)
+		req.AddCookie(refreshCookie)
 
-		response, err := client.Do(req)
+		resp, err := client.Do(req)
 		if err != nil {
 			a.BindError(ctx, err)
 		}
-		defer response.Body.Close()
+		defer resp.Body.Close()
 		
-		if response.StatusCode != http.StatusOK {
-			ctx.JSON(response.StatusCode, gin.H{
-				"error": response.Status,
+		if resp.StatusCode != http.StatusOK {
+			ctx.JSON(resp.StatusCode, gin.H{
+				"error": resp.Status,
 			})
+			return
 		}
 
 		user := UserProjection{}
-		json.NewDecoder(response.Body).Decode(&user)
-
+		json.NewDecoder(resp.Body).Decode(&user)
+	
 		ctx.Set("email", user.Email)
 		ctx.Next()
 	}

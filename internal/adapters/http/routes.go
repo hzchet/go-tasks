@@ -1,8 +1,9 @@
 package http
 
 import (
-	"gitlab.com/golang-hse-2022/team1/tasks/pkg/infra/logger"
 	"time"
+
+	"gitlab.com/golang-hse-2022/team1/tasks/pkg/infra/logger"
 
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"

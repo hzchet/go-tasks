@@ -5,12 +5,12 @@ import (
 )
 
 type MemoryStorage struct {
-	tasksByAuthor map[string]*[]models.Task
+	tasksByAuthor map[string]*[]*models.Task
 	tasksById map[string]*models.Task
 }
 
 func New() (*MemoryStorage, error) {
-	byAuthorStorage := make(map[string]*[]models.Task)
+	byAuthorStorage := make(map[string]*[]*models.Task)
 	byIdStorage := make(map[string]*models.Task)
 	return &MemoryStorage{
 		tasksByAuthor: byAuthorStorage,

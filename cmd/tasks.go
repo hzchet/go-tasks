@@ -21,7 +21,7 @@ func main() {
 		log.Fatalf("logger initialization failed: %s", err.Error())
 	}
 	app := application.New(l)
-	err = app.Start()
+	err = app.Start(true)
 	if err != nil {
 		l.Sugar().Fatalf("app not started: %s", err.Error())
 	}

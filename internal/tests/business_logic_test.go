@@ -1,4 +1,4 @@
-package test
+package tests
 
 import (
 	"gitlab.com/golang-hse-2022/team1/tasks/internal/adapters/memory"

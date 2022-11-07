@@ -21,7 +21,7 @@ func New(l logger.Logger) *App{
 	}
 }
 
-func (app *App) Start() error {
+func (app *App) Start(isProd bool) error {
 	probes, _ := probes.New(app.l)
 	probes.SetStarted()
 	err := probes.Start()
@@ -44,7 +44,7 @@ func (app *App) Start() error {
 		app.l.Sugar().Fatalf("create buissness logic failed: %s", err.Error())
 	}
 
-	s, err := http.New(tasks, app.l)
+	s, err := http.New(tasks, app.l, isProd)
 	if err != nil {
 		app.l.Sugar().Fatalf("server not started %s", err.Error())
 	}

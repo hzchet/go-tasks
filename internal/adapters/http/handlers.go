@@ -140,7 +140,7 @@ func (a *Adapter) getDescription(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"task_description": desc,
+		"taskDescription": desc,
 	})
 }
 

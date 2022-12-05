@@ -75,23 +75,16 @@ func (t *Tasks) GetTaskDescription(ctx context.Context, email, taskId string) (s
 	return task.Body.Description, nil
 }
 
-func sendResult(ctx context.Context, result string, taskId string, approvers []*models.Approver) error {
-	for i := range(approvers) {
-		log.Printf("send mail to %s: task %s, status: %s\n", approvers[i].Email, taskId, result)
-	}
-	return nil
-}
-
-func (t *Tasks) ApproveTask(ctx context.Context, email, taskId string) error {
+func (t *Tasks) ApproveTask(ctx context.Context, email, taskId string) (models.Message, error) {
 	ctx, span := metrics.FollowSpan(ctx)
 	defer span.End()
 	
 	task, err := t.taskStorage.GetTaskById(ctx, taskId)
 	if err != nil {
-		return err
+		return models.Message{}, err
 	}
 	if task.Status == "declined" {
-		return fmt.Errorf("task already declined: %w", models.ErrForbidden)
+		return models.Message{}, fmt.Errorf("task already declined: %w", models.ErrForbidden)
 	}
 	var approverIndex int = -1
 	for i := range(task.Body.Approvers) {
@@ -102,32 +95,46 @@ func (t *Tasks) ApproveTask(ctx context.Context, email, taskId string) error {
 		}
 	}
 	if approverIndex != -1 && approverIndex + 1 < len(task.Body.Approvers) {
-		log.Printf("send mail to %s: approve/decline new task %s\n", task.Body.Approvers[approverIndex + 1].Email, taskId)
-		return nil
+		message := models.Message{
+			Theme: "You assigned as an approver!",
+			Recievers: []*models.Approver{task.Body.Approvers[approverIndex + 1]},
+			Body: "Approve/decline new task with id",
+		}
+		return message, nil
 	} else if approverIndex == len(task.Body.Approvers) - 1 {
 		task.Status = "approved"
-		return sendResult(ctx, "approved", taskId, task.Body.Approvers)
+		message := models.Message{
+			Theme: "Task is approved!",
+			Recievers: task.Body.Approvers,
+			Body: "Task is approved by all approvers!!",
+		}
+		return message, nil
 	}
-	return fmt.Errorf("approver not found: %w", models.ErrNotFound)
+	return models.Message{}, fmt.Errorf("approver not found: %w", models.ErrNotFound)
 }
 
-func (t *Tasks) DeclineTask(ctx context.Context, email, taskId string) error {
+func (t *Tasks) DeclineTask(ctx context.Context, email, taskId string) (models.Message, error) {
 	ctx, span := metrics.FollowSpan(ctx)
 	defer span.End()
 	
 	task, err := t.taskStorage.GetTaskById(ctx, taskId)
 	if err != nil {
-		return err
+		return models.Message{}, err
 	}
 	if task.Status == "approved" {
-		return fmt.Errorf("task already approved: %w", models.ErrForbidden)
+		return models.Message{}, fmt.Errorf("task already approved: %w", models.ErrForbidden)
 	}
 	for i := range(task.Body.Approvers) {
 		if task.Body.Approvers[i].Email == email {
 			task.Body.Approvers[i].Status = "declined"
 			task.Status = "declined"
-			return sendResult(ctx, "declined", taskId, task.Body.Approvers)
+			message := models.Message{
+				Theme: "Task is declined!",
+				Recievers: task.Body.Approvers,
+				Body: "Task is declined by one of the approvers!!",
+			}
+			return message, nil
 		}
 	}
-	return fmt.Errorf("approver not found: %w", models.ErrNotFound)
+	return models.Message{}, fmt.Errorf("approver not found: %w", models.ErrNotFound)
 }

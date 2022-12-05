@@ -5,20 +5,23 @@ import (
 	"gitlab.com/golang-hse-2022/team1/tasks/pkg/infra/logger"
 
 	"context"
-	"errors"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
 	"sync"
 	"time"
+	"flag"
 
 	"github.com/caarlos0/env"
 	"github.com/gin-gonic/gin"
+	"github.com/segmentio/kafka-go"
 )
 
 type Adapter struct {
 	s    *http.Server
+	writer *kafka.Writer
 	l    net.Listener
 	tasks ports.Tasks
 	isProd bool
@@ -28,7 +31,10 @@ type Config struct {
 	Port int `env:"HTTP_PORT" envDefault:"3000"`
 }
 
+var async = flag.Bool("a", false, "use async")
+
 func New(tasks ports.Tasks, log logger.Logger, isProd bool) (*Adapter, error) {
+	flag.Parse()
 	var cfg Config
 	if err := env.Parse(&cfg); err != nil {
 		return nil, fmt.Errorf("parse server http adapter configuration failed: %w", err)
@@ -45,9 +51,20 @@ func New(tasks ports.Tasks, log logger.Logger, isProd bool) (*Adapter, error) {
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
+	writer := kafka.NewWriter(kafka.WriterConfig{
+		Brokers:     []string{"127.0.0.1:29092", "127.0.0.1:39092", "127.0.0.1:49092"},
+		Topic:       "demo",
+		Async:       *async,
+		BatchSize:   2000,
+
+		// CompressionCodec: &compress.Lz4Codec,
+
+		Balancer: &SimpleBalancer{},
+	})
 
 	a := Adapter{
 		s:    &server,
+		writer: writer,
 		l:    l,
 		tasks: tasks,
 		isProd: isProd,

@@ -45,15 +45,15 @@ func TestLogic(t *testing.T) {
 		taskId, err := logic.CreateTask(ctx, authorEmail, taskBody)
 		assert.Nil(t, err)
 
-		err = logic.ApproveTask(ctx, "email1", taskId)
+		_, err = logic.ApproveTask(ctx, "email1", taskId)
 		assert.Nil(t, err)
 		assert.Equal(t, "approved", a1.Status)
 
-		err = logic.ApproveTask(ctx, "email2", taskId)
+		_, err = logic.ApproveTask(ctx, "email2", taskId)
 		assert.Nil(t, err)
 		assert.Equal(t, "approved", a2.Status)
 
-		err = logic.ApproveTask(ctx, "email3", taskId)
+		_, err = logic.ApproveTask(ctx, "email3", taskId)
 		assert.Nil(t, err)
 		assert.Equal(t, "approved", a3.Status)
 
@@ -95,11 +95,11 @@ func TestLogic(t *testing.T) {
 		taskId, err := logic.CreateTask(ctx, authorEmail, taskBody)
 		assert.Nil(t, err)
 
-		err = logic.ApproveTask(ctx, "email1", taskId)
+		_, err = logic.ApproveTask(ctx, "email1", taskId)
 		assert.Nil(t, err)
 		assert.Equal(t, "approved", a1.Status)
 
-		err = logic.DeclineTask(ctx, "email2", taskId)
+		_, err = logic.DeclineTask(ctx, "email2", taskId)
 		assert.Nil(t, err)
 		assert.Equal(t, "declined", a2.Status)
 
@@ -141,15 +141,15 @@ func TestLogic(t *testing.T) {
 		taskId, err := logic.CreateTask(ctx, authorEmail, taskBody)
 		assert.Nil(t, err)
 
-		err = logic.ApproveTask(ctx, "email1", taskId)
+		_, err = logic.ApproveTask(ctx, "email1", taskId)
 		assert.Nil(t, err)
 		assert.Equal(t, "approved", a1.Status)
 		
-		err = logic.DeclineTask(ctx, "email2", taskId)
+		_, err = logic.DeclineTask(ctx, "email2", taskId)
 		assert.Nil(t, err)
 		assert.Equal(t, "declined", a2.Status)
 
-		err = logic.ApproveTask(ctx, "email3", taskId)
+		_, err = logic.ApproveTask(ctx, "email3", taskId)
 		assert.Error(t, err)
 
 		task, err := memory.GetTaskById(ctx, taskId)

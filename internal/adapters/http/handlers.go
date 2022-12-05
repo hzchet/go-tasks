@@ -7,6 +7,7 @@ import (
 	"gitlab.com/golang-hse-2022/team1/tasks/internal/domain/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/segmentio/kafka-go"
 )
 
 // Approve
@@ -29,9 +30,19 @@ func (a *Adapter) approve(ctx *gin.Context) {
 		})
 	}
 
-	if err := a.tasks.ApproveTask(ctx, email.(string), taskId); err != nil {
+	message, err := a.tasks.ApproveTask(ctx, email.(string), taskId)
+	if err != nil {
+		a.BindError(ctx, err)		
+	}
+	err = a.writer.WriteMessages(ctx, kafka.Message{})
+	if err != nil {
 		a.BindError(ctx, err)
 	}
+	json_message, err := json.Marshal(&message)
+	if err != nil {
+		a.BindError(ctx, err)
+	}
+	a.writer.WriteMessages(ctx, kafka.Message{Value: []byte(json_message)})
 }
 
 // Decline
@@ -54,9 +65,19 @@ func (a *Adapter) decline(ctx *gin.Context) {
 		})
 	}
 
-	if err := a.tasks.DeclineTask(ctx, email.(string), taskId); err != nil {
+	message, err := a.tasks.DeclineTask(ctx, email.(string), taskId)
+	if err != nil {
+		a.BindError(ctx, err)		
+	}
+	err = a.writer.WriteMessages(ctx, kafka.Message{})
+	if err != nil {
 		a.BindError(ctx, err)
 	}
+	json_message, err := json.Marshal(&message)
+	if err != nil {
+		a.BindError(ctx, err)
+	}
+	a.writer.WriteMessages(ctx, kafka.Message{Value: []byte(json_message)})
 }
 
 // Delete

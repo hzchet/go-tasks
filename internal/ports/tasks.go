@@ -11,6 +11,6 @@ type Tasks interface{
 	DeleteTask(ctx context.Context, email, taskId string) error
 	GetTasks(ctx context.Context, email string) (*[]models.Task, error)
 	GetTaskDescription(ctx context.Context, email, taskId string) (string, error)
-	ApproveTask(ctx context.Context, email, taskId string) error
-	DeclineTask(ctx context.Context, email, taskId string) error
+	ApproveTask(ctx context.Context, email, taskId string) (models.Message, error)
+	DeclineTask(ctx context.Context, email, taskId string) (models.Message, error)
 }

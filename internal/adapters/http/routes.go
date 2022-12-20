@@ -25,7 +25,11 @@ func initRouter(a *Adapter, r *gin.Engine, l logger.Logger) {
 		authorized.GET("/:taskId", a.getDescription)
 		authorized.POST("/approve/:taskId", a.approve)
 		authorized.POST("/decline/:taskId", a.decline)
-		authorized.POST("/", a.create)
 		authorized.DELETE("/:taskId", a.delete)
+		limited := authorized.Group("/")
+		limited.Use(a.Limited())
+		{
+			limited.POST("/", a.create)
+		}
 	}
 }

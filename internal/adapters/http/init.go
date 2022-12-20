@@ -3,6 +3,7 @@ package http
 import (
 	"gitlab.com/golang-hse-2022/team1/tasks/internal/ports"
 	"gitlab.com/golang-hse-2022/team1/tasks/pkg/infra/logger"
+	"gitlab.com/golang-hse-2022/team1/tasks/pkg/infra/limiter"
 
 	"context"
 	"encoding/json"
@@ -103,6 +104,17 @@ func (a *Adapter) Stop(ctx context.Context) error {
 
 type UserProjection struct {
 	Email string	
+}
+
+func (a *Adapter) Limited() gin.HandlerFunc {
+	limiter := limiter.NewLimiter(time.Second, 100)
+	
+	for {
+		limiter.Wait()
+		return func(ctx *gin.Context) {
+			ctx.Next()
+		}
+	}
 }
 
 func (a *Adapter) AuthRequired() gin.HandlerFunc {

@@ -175,7 +175,7 @@ func (a *Adapter) getDescription(ctx *gin.Context) {
 // @Failure 403 {string} string "forbidden"
 // @Failure 500 {string} string "internal error"
 // @Router / [post]
-func (a *Adapter) create(ctx *gin.Context) {
+func (a *Adapter) create(ctx *gin.Context) {	
 	email, ok := ctx.Get("email")
 	if !ok {
 		ctx.JSON(http.StatusInternalServerError, gin.H{

@@ -69,7 +69,7 @@ func (s *integraTestSuite) SetupSuite() {
 	app := application.New(l)
 	s.app = app
 	s.withAuth = true
-	err = s.app.Start(s.withAuth)
+	err = s.app.Start(connstr, dbname, s.withAuth)
 	if err != nil {
 		l.Sugar().Fatalf("app not started: %s", err.Error())
 	}

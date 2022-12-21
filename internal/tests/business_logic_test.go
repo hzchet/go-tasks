@@ -11,10 +11,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	connstr = "mongodb://mongodb-0:27017"
+	dbname  = "dbuser"
+)
+
 func TestLogic(t *testing.T) {
 	
 	t.Run("correct approve", func(t *testing.T) {
-		memory, err := memory.New()
+		memory, err := memory.NewDatabase(context.Background(), connstr, dbname)
 		assert.Nil(t, err)
 
 		logic, err := usecases.New(memory)
@@ -64,7 +69,7 @@ func TestLogic(t *testing.T) {
 	})
 
 	t.Run("decline", func(t *testing.T) {
-		memory, err := memory.New()
+		memory, err := memory.NewDatabase(context.Background(), connstr, dbname)
 		assert.Nil(t, err)
 
 		logic, err := usecases.New(memory)
@@ -110,7 +115,7 @@ func TestLogic(t *testing.T) {
 	})
 
 	t.Run("incorrect approve after decline", func(t *testing.T) {
-		memory, err := memory.New()
+		memory, err := memory.NewDatabase(context.Background(), connstr, dbname)
 		assert.Nil(t, err)
 
 		logic, err := usecases.New(memory)

@@ -21,7 +21,7 @@ func New(l logger.Logger) *App{
 	}
 }
 
-func (app *App) Start(isProd bool) error {
+func (app *App) Start(connStr, dbName string, isProd bool) error {
 	probes, _ := probes.New(app.l)
 	probes.SetStarted()
 	err := probes.Start()
@@ -34,12 +34,12 @@ func (app *App) Start(isProd bool) error {
 		app.l.Sugar().Fatalf("Metrics init failed: %s", err.Error())
 	}
 
-	userStorage, err := memory.New()
+	storage, err := memory.NewDatabase(context.Background(), connStr, dbName)
 	if err != nil {
 		app.l.Sugar().Fatalf("create user storage failed: %s", err.Error())
 	}
 
-	tasks, err := usecases.New(userStorage)
+	tasks, err := usecases.New(storage)
 	if err != nil {
 		app.l.Sugar().Fatalf("create buissness logic failed: %s", err.Error())
 	}

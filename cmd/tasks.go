@@ -12,6 +12,11 @@ import (
 	"time"
 )
 
+var (
+	connstr = "mongodb://mongodb-0:27017"
+	dbname  = "dbuser"
+)
+
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, os.Interrupt)
 	defer cancel()
@@ -21,7 +26,7 @@ func main() {
 		log.Fatalf("logger initialization failed: %s", err.Error())
 	}
 	app := application.New(l)
-	err = app.Start(true)
+	err = app.Start(connstr, dbname, true)
 	if err != nil {
 		l.Sugar().Fatalf("app not started: %s", err.Error())
 	}

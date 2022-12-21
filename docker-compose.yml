@@ -5,3 +5,18 @@ services:
     build: .
     ports:
       - "3000:3000"
+  mongodb:
+    image: mongo:5.0.6
+    volumes:
+      - "mongo-vol:/data/db"
+      - "mongo-vol:/data/configdb"
+    ports:
+      - "27017:27017"
+    networks:
+      - db_network
+
+volumes:
+  mongo-vol:
+  mongo-config-vol:
+networks:
+  db_network:  

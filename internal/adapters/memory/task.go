@@ -6,53 +6,82 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/juju/zaputil/zapctx"
-	"go.uber.org/zap"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (s *MemoryStorage) AddTask(ctx context.Context, email string, task models.Task) error {
+type Task struct {
+	AuthorEmail string      `bson:"author_email`
+	Body        TaskRequest `bson:"body"`
+	IsCancelled bool        `bson:"is_cancelled`
+	Status      string      `bson:"status"`   
+	Id          string      `bson:"_id"`
+}
+
+func (t *Task) ToService() models.Task {
+	return models.Task{
+		AuthorEmail: t.AuthorEmail,
+		Body: 		 t.Body.ToService(),
+		IsCancelled: t.IsCancelled,
+		Status:      t.Status,
+		Id: 		 t.Id,
+	}
+}
+
+func taskFromService(t *models.Task) Task {
+	return Task{
+		AuthorEmail: t.AuthorEmail,
+		Body: 		 taskRequestFromService(&t.Body),
+		IsCancelled: t.IsCancelled,
+		Status: 	 t.Status,
+		Id: 		 t.Id,
+	}
+}
+
+func (d *Database) AddTask(ctx context.Context, task models.Task) error {
 	_, span := metrics.FollowSpan(ctx)
 	defer span.End()
 	
-	tasks, ok := s.tasksByAuthor[email]
-	if !ok {
-		s.tasksByAuthor[email] = &[]*models.Task{}
-		tasks = s.tasksByAuthor[email]
+	_, err := d.taskCollection.InsertOne(ctx, taskFromService(&task))
+	if err != nil {
+		return fmt.Errorf("cannot insert task: %w", err)
 	}
-	*tasks = append(*tasks, &task)
-	s.tasksById[task.Id] = &task
+
 	return nil
 }
 
-func (s *MemoryStorage) GetTasks(ctx context.Context, email string) (*[]models.Task, error) {
+func (d *Database) GetTasks(ctx context.Context, email string) (*[]models.Task, error) {
 	ctx, span := metrics.FollowSpan(ctx)
 	defer span.End()
 
-	tasks, ok := s.tasksByAuthor[email]
-	if !ok {
-		zapctx.Error(ctx, "user not found", zap.String("user", email))
-		err := fmt.Errorf("%w: user", models.ErrNotFound)
-		metrics.SetError(span, err)
-		return &[]models.Task{}, err
+	var tasks []models.Task
+
+	cursor, err := d.taskCollection.Find(ctx, bson.M{"email": email})
+	if err != nil {
+		return &[]models.Task{}, fmt.Errorf("cannot get tasks: %w", err)
 	}
-	
-	result := []models.Task{}
-	for i := range(*tasks) {
-		result = append(result, *(*tasks)[i])
+
+	for cursor.Next(ctx) {
+		var t Task
+		if err := cursor.Decode(&t); err != nil {
+			return &[]models.Task{}, fmt.Errorf("cannot get tasks: %w, err")
+		}
+		tasks = append(tasks, t.ToService())
 	}
-	return &result, nil
+
+	return &tasks, nil
 }
 
-func (s *MemoryStorage) GetTaskById(ctx context.Context, taskId string) (*models.Task, error) {
+func (d *Database) GetTaskById(ctx context.Context, taskId string) (*models.Task, error) {
 	ctx, span := metrics.FollowSpan(ctx)
 	defer span.End()
 
-	task, ok := s.tasksById[taskId]
-	if !ok {
-		zapctx.Error(ctx, "task not found", zap.String("task", taskId))
-		err := fmt.Errorf("%w: task", models.ErrNotFound)
-		metrics.SetError(span, err)
-		return &models.Task{}, err
+	var task Task
+
+	err := d.taskCollection.FindOne(ctx, bson.M{"_id": taskId}).Decode(&task)
+	if err != nil {
+		return &models.Task{}, fmt.Errorf("cannot get task by id: %w", err)
 	}
-	return task, nil
+
+	var t models.Task = task.ToService()
+	return &t, nil
 }

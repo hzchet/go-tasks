@@ -35,7 +35,7 @@ func (t *Tasks) CreateTask(ctx context.Context, email string, taskRequest models
 		Id: taskId,
 	}
 	
-	err := t.taskStorage.AddTask(ctx, email, task)
+	err := t.taskStorage.AddTask(ctx, task)
 
 	if len(task.Body.Approvers) > 0 {
 		log.Printf("send mail to %s: approve/decline new task %s\n", task.Body.Approvers[0].Email, taskId)
